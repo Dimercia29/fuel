@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fuelivery — Fuel Access. Reimagined.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--black:#050505;--deep:#0a0a0a;--surface:#111;--card:#161616;
+--gold:#E8A020;--gold2:#F5B84C;--gold-dim:rgba(232,160,32,.12);
+--white:#F5F2ED;--muted:#777770;--faint:#2a2a28;
+--font-d:'Bebas Neue',sans-serif;
+--font-b:'Syne',sans-serif;
+--font-m:'DM Mono',monospace;
+--ease:cubic-bezier(.16,1,.3,1);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--black);color:var(--white);font-family:var(--font-b);overflow-x:hidden;cursor:none}
+::selection{background:var(--gold);color:var(--black)}
+a{color:inherit;text-decoration:none}
+
+/* CURSOR */
+#cur,#cur2{position:fixed;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s,opacity .3s}
+#cur{width:10px;height:10px;background:var(--gold);mix-blend-mode:difference}
+#cur2{width:40px;height:40px;border:1px solid rgba(232,160,32,.4);background:transparent;transition:width .5s var(--ease),height .5s var(--ease),border-color .3s,left .08s linear,top .08s linear}
+body.ch #cur{width:6px;height:6px}
+body.ch #cur2{width:64px;height:64px;border-color:var(--gold)}
+
+/* NOISE */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");pointer-events:none;z-index:8000;opacity:.5}
+
+/* PROGRESS */
+#prog{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold2));z-index:1000;width:0;transition:width .1s linear}
+
+/* SPOTLIGHT */
+#spotlight{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(600px circle at 50% 50%, rgba(232,160,32,.06) 0%, transparent 70%);transition:background .15s}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:28px 60px;display:flex;align-items:center;justify-content:space-between;transition:all .4s}
+nav.s{background:rgba(5,5,5,.88);backdrop-filter:blur(20px);padding:16px 60px;border-bottom:1px solid rgba(255,255,255,.05)}
+.nlogo{font-family:var(--font-d);font-size:1.8rem;letter-spacing:.05em;color:var(--gold)}
+.nlogo span{color:var(--white)}
+.nlinks{display:flex;gap:40px;list-style:none}
+.nlinks a{font-family:var(--font-m);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);transition:color .2s;position:relative}
+.nlinks a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--gold);transition:width .3s var(--ease)}
+.nlinks a:hover{color:var(--white)}
+.nlinks a:hover::after{width:100%}
+.ncta{font-family:var(--font-m);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;background:var(--gold);color:var(--black);padding:11px 24px;border:none;cursor:none;transition:all .2s;display:inline-block}
+.ncta:hover{background:var(--gold2);transform:translateY(-2px)}
+.hbg{display:none;flex-direction:column;gap:5px;cursor:none;background:none;border:none;padding:4px}
+.hbg span{display:block;width:24px;height:1.5px;background:var(--white);transition:all .3s}
+.hbg.o span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+.hbg.o span:nth-child(2){opacity:0}
+.hbg.o span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+.mmenu{position:fixed;inset:0;background:var(--black);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;opacity:0;pointer-events:none;transition:opacity .4s}
+.mmenu.o{opacity:1;pointer-events:all}
+.mmenu a{font-family:var(--font-d);font-size:3.5rem;color:var(--white);transition:color .2s;letter-spacing:.05em}
+.mmenu a:hover{color:var(--gold)}
+.mmenu .gc{color:var(--gold)!important}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 60px 88px;position:relative;overflow:hidden}
+.hbg-wrap{position:absolute;inset:0;overflow:hidden}
+.hbg-grad{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 65% 25%,rgba(232,160,32,.09) 0%,transparent 65%),radial-gradient(ellipse 40% 40% at 85% 75%,rgba(232,160,32,.05) 0%,transparent 50%),var(--black)}
+.hgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:72px 72px;mask-image:radial-gradient(ellipse at center,transparent 10%,black 70%);-webkit-mask-image:radial-gradient(ellipse at center,transparent 10%,black 70%)}
+#canvas{position:absolute;inset:0;z-index:0}
+.hero-eye{font-family:var(--font-m);font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:22px;display:flex;align-items:center;gap:12px;position:relative;z-index:2}
+.hero-eye::before{content:'';display:block;width:32px;height:1px;background:var(--gold)}
+.hero-h1{font-family:var(--font-d);font-size:clamp(5rem,13vw,12rem);line-height:.9;letter-spacing:.02em;margin-bottom:36px;position:relative;z-index:2}
+.hero-h1 .ln{overflow:hidden;display:block}
+.hero-h1 .wd{display:inline-block;transform:translateY(110%);transition:transform .9s var(--ease)}
+.hero-h1 .g{color:var(--gold)}
+.hero-p{max-width:460px;font-size:1rem;color:var(--muted);line-height:1.75;margin-bottom:52px;opacity:0;transform:translateY(24px);transition:opacity .8s .6s,transform .8s .6s var(--ease);position:relative;z-index:2}
+.hero-acts{display:flex;gap:16px;align-items:center;opacity:0;transform:translateY(24px);transition:opacity .8s .8s,transform .8s .8s var(--ease);position:relative;z-index:2}
+.hero-scroll{position:absolute;bottom:44px;right:60px;writing-mode:vertical-rl;font-family:var(--font-m);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:12px;opacity:0;transition:opacity .8s 1.4s;z-index:2}
+.hero-scroll::after{content:'';display:block;width:1px;height:60px;background:linear-gradient(to bottom,var(--faint),transparent);animation:sl 2s ease-in-out infinite}
+@keyframes sl{0%,100%{transform:scaleY(1);opacity:1}50%{transform:scaleY(.5);opacity:.3}}
+body.ld .hero-h1 .wd{transform:translateY(0)}
+body.ld .hero-p{opacity:1;transform:translateY(0)}
+body.ld .hero-acts{opacity:1;transform:translateY(0)}
+body.ld .hero-scroll{opacity:1}
+
+/* BUTTONS */
+.btn-p{font-family:var(--font-m);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;background:var(--gold);color:var(--black);padding:16px 36px;border:1px solid var(--gold);cursor:none;display:inline-flex;align-items:center;gap:10px;transition:all .25s;position:relative;overflow:hidden}
+.btn-p::before{content:'';position:absolute;inset:0;background:var(--gold2);transform:translateX(-100%);transition:transform .3s var(--ease)}
+.btn-p:hover::before{transform:translateX(0)}
+.btn-p:hover{transform:translateY(-3px)}
+.btn-p span,.btn-p svg{position:relative;z-index:1}
+.btn-g{font-family:var(--font-m);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--muted);padding:16px 36px;border:1px solid rgba(255,255,255,.1);cursor:none;display:inline-flex;align-items:center;gap:10px;transition:all .25s}
+.btn-g:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-3px)}
+
+/* ZOOM SCROLL STRIP */
+#zoom-strip{height:400vh;position:relative}
+.zoom-sticky{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.zoom-text{font-family:var(--font-d);font-size:clamp(3rem,8vw,8rem);line-height:1;text-align:center;transform:scale(.6);opacity:0;transition:none;will-change:transform,opacity}
+.zoom-text .zg{color:var(--gold)}
+
+/* STATS */
+#stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+.si{padding:44px 48px;border-right:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden;transition:background .3s}
+.si:last-child{border-right:none}
+.si:hover{background:rgba(232,160,32,.04)}
+.si::after{content:'';position:absolute;bottom:0;left:0;width:0;height:2px;background:var(--gold);transition:width .7s var(--ease)}
+.si.iv::after{width:100%}
+.sn{font-family:var(--font-d);font-size:3.2rem;color:var(--gold);line-height:1;margin-bottom:6px}
+.sl{font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* MARQUEE */
+.mq{border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:18px 0;overflow:hidden;background:var(--deep)}
+.mqt{display:flex;gap:56px;white-space:nowrap;animation:mq 28s linear infinite}
+.mqt:hover{animation-play-state:paused}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.mqi{font-family:var(--font-d);font-size:1.1rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.15);display:flex;align-items:center;gap:56px}
+.mqi::after{content:'◆';color:var(--gold);font-size:.5rem}
+
+/* SECTION SHARED */
+section{padding:120px 60px}
+.stag{font-family:var(--font-m);font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.stag::before{content:'';display:block;width:20px;height:1px;background:var(--gold)}
+.sh{font-family:var(--font-d);font-size:clamp(2.8rem,5vw,5rem);line-height:1;margin-bottom:24px}
+.sp{font-size:.98rem;color:var(--muted);line-height:1.8;max-width:560px}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(48px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv.iv{opacity:1;transform:translateY(0)}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}.rv.d4{transition-delay:.4s}
+
+/* FOUNDER */
+#founder{display:grid;grid-template-columns:1fr 1fr;gap:88px;align-items:center;border-top:1px solid rgba(255,255,255,.06)}
+.f-frame{width:100%;aspect-ratio:3/4;background:var(--card);border:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden}
+.f-inner{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(232,160,32,.1) 0%,transparent 60%),linear-gradient(180deg,transparent 40%,rgba(5,5,5,.85) 100%)}
+.f-big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:9rem;color:rgba(232,160,32,.06);letter-spacing:.1em}
+.f-name{position:absolute;bottom:32px;left:32px}
+.f-name h3{font-family:var(--font-d);font-size:2.2rem}
+.f-name p{font-family:var(--font-m);font-size:.66rem;letter-spacing:.1em;color:var(--gold);text-transform:uppercase}
+.fc-tl,.fc-br{position:absolute;width:36px;height:36px;border-color:var(--gold);border-style:solid}
+.fc-tl{top:14px;left:14px;border-width:1px 0 0 1px}
+.fc-br{bottom:14px;right:14px;border-width:0 1px 1px 0}
+.f-content blockquote{font-family:var(--font-d);font-size:1.9rem;line-height:1.3;margin-bottom:28px;padding-left:24px;position:relative}
+.f-content blockquote::before{content:'"';position:absolute;left:0;top:-10px;font-size:4.5rem;color:var(--gold);line-height:1;font-family:var(--font-d)}
+.f-content p{color:var(--muted);font-size:.92rem;line-height:1.8;margin-bottom:14px}
+.ftags{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+.ftag{font-family:var(--font-m);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:6px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted);transition:border-color .2s,color .2s}
+.ftag:hover{border-color:var(--gold);color:var(--gold)}
+
+/* PROBLEM */
+#problem{background:var(--deep);border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+.prob-grid{display:grid;grid-template-columns:1fr 1fr;gap:88px;margin-top:64px;align-items:start}
+.prob-list{display:flex;flex-direction:column}
+.pi{display:flex;align-items:flex-start;gap:20px;padding:28px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:default;transition:background .2s}
+.pi:first-child{border-top:1px solid rgba(255,255,255,.06)}
+.pin{font-family:var(--font-m);font-size:.62rem;color:var(--gold);min-width:28px;padding-top:4px}
+.pit h4{font-size:.98rem;font-weight:700;margin-bottom:6px}
+.pit p{font-size:.86rem;color:var(--muted);line-height:1.6}
+.pcard{background:var(--card);border:1px solid rgba(255,255,255,.06);padding:44px;position:relative;overflow:hidden;margin-bottom:2px}
+.pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.pcs{font-family:var(--font-d);font-size:5.5rem;color:var(--gold);line-height:1;margin-bottom:6px}
+.pcl{font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:28px}
+.pcb{font-size:.88rem;color:var(--muted);line-height:1.75}
+
+/* HOW IT WORKS */
+#solution{border-top:1px solid rgba(255,255,255,.06)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.06);margin-top:64px}
+.sc{background:var(--card);padding:52px 36px;position:relative;overflow:hidden;transition:background .3s}
+.sc:hover{background:var(--surface)}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform .5s var(--ease)}
+.sc:hover::after{transform:scaleX(1)}
+.sn2{font-family:var(--font-d);font-size:5.5rem;color:rgba(232,160,32,.07);line-height:1;margin-bottom:24px;transition:color .3s}
+.sc:hover .sn2{color:rgba(232,160,32,.14)}
+.sico{width:40px;height:40px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:var(--gold)}
+.st{font-size:1.05rem;font-weight:700;margin-bottom:12px}
+.sd{font-size:.86rem;color:var(--muted);line-height:1.7}
+
+/* HORIZONTAL SCROLL */
+#hscroll{padding:0;overflow:hidden;height:100vh;position:relative}
+.hs-sticky{position:sticky;top:0;height:100vh;display:flex;align-items:center;overflow:hidden}
+.hs-track{display:flex;gap:2px;padding:0 60px;will-change:transform}
+.hcard{min-width:420px;height:70vh;background:var(--card);border:1px solid rgba(255,255,255,.06);padding:52px 40px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;flex-shrink:0;transition:background .3s}
+.hcard:hover{background:var(--surface)}
+.hcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);transform:scaleX(0);transition:transform .4s var(--ease)}
+.hcard:hover::before{transform:scaleX(1)}
+.hc-num{font-family:var(--font-d);font-size:6rem;color:rgba(232,160,32,.08);line-height:1;margin-bottom:auto}
+.hc-title{font-family:var(--font-d);font-size:2.2rem;margin-bottom:16px;line-height:1.1}
+.hc-tag{font-family:var(--font-m);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:var(--gold-dim);padding:5px 12px;display:inline-block;margin-bottom:20px}
+.hc-desc{font-size:.88rem;color:var(--muted);line-height:1.7}
+.hs-hint{position:absolute;bottom:40px;right:60px;font-family:var(--font-m);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.15);display:flex;align-items:center;gap:10px}
+.hs-hint::before{content:'';display:block;width:40px;height:1px;background:rgba(255,255,255,.1)}
+
+/* THESIS */
+#thesis{background:var(--deep);border-top:1px solid rgba(255,255,255,.06)}
+.thesis-layout{display:grid;grid-template-columns:380px 1fr;gap:88px;margin-top:64px;align-items:start}
+.pillar{padding:28px 32px;background:var(--card);border-left:2px solid transparent;cursor:none;transition:border-color .2s,background .2s;margin-bottom:2px}
+.pillar:hover,.pillar.a{border-left-color:var(--gold);background:var(--surface)}
+.pillar h4{font-size:.95rem;font-weight:700;margin-bottom:4px}
+.pillar p{font-size:.8rem;color:var(--muted);line-height:1.5}
+.td-panel{display:none}
+.td-panel.a{display:block}
+.td-big{font-family:var(--font-d);font-size:clamp(2.5rem,4.5vw,4.5rem);line-height:1;margin-bottom:28px}
+.td-big .acc{color:var(--gold)}
+.td-body{font-size:.93rem;color:var(--muted);line-height:1.8;max-width:520px;margin-bottom:36px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cc{padding:24px;border:1px solid rgba(255,255,255,.06)}
+.cc.bad{border-color:rgba(192,57,43,.3)}
+.cc.good{border-color:rgba(232,160,32,.3)}
+.ccl{font-family:var(--font-m);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+.cc.bad .ccl{color:#C0392B}
+.cc.good .ccl{color:var(--gold)}
+.ci{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--muted);padding:5px 0}
+.ci::before{content:'—';color:rgba(255,255,255,.2);font-size:.7rem}
+.cc.good .ci::before{content:'✓';color:var(--gold)}
+
+/* MODEL */
+#model{border-top:1px solid rgba(255,255,255,.06)}
+.model-g{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:rgba(255,255,255,.05);margin-top:64px}
+.mc{background:var(--card);padding:44px 32px;position:relative;overflow:hidden;transition:background .3s;cursor:default}
+.mc:hover{background:var(--surface)}
+.mc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:0;background:var(--gold-dim);transition:height .4s var(--ease)}
+.mc:hover::after{height:100%}
+.mc>*{position:relative;z-index:1}
+.mico{font-size:1.6rem;margin-bottom:20px}
+.mt{font-size:1rem;font-weight:700;margin-bottom:10px}
+.md{font-size:.84rem;color:var(--muted);line-height:1.6}
+.mtag{display:inline-block;margin-top:14px;font-family:var(--font-m);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:var(--gold-dim);padding:4px 10px}
+
+/* VISION */
+#vision{background:var(--deep);border-top:1px solid rgba(255,255,255,.06);text-align:center}
+.vis-in{max-width:820px;margin:0 auto}
+.vish{font-family:var(--font-d);font-size:clamp(3.5rem,7.5vw,7.5rem);line-height:.95;margin-bottom:32px}
+.vish .vg{color:var(--gold)}
+.visp{font-size:1rem;color:var(--muted);line-height:1.8;margin-bottom:52px}
+.vmarks{display:flex;justify-content:center;border:1px solid rgba(255,255,255,.06);margin-bottom:64px;flex-wrap:wrap}
+.vm{padding:20px 40px;border-right:1px solid rgba(255,255,255,.06);font-family:var(--font-m);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:all .2s;display:flex;align-items:center;gap:8px;cursor:default}
+.vm:last-child{border-right:none}
+.vm:hover{color:var(--gold);background:var(--gold-dim)}
+.vdot{display:inline-block;width:6px;height:6px;background:var(--gold);border-radius:50%;animation:pu 2s ease-in-out infinite}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+
+/* FAQ */
+#faq{border-top:1px solid rgba(255,255,255,.06)}
+.faq-l{display:grid;grid-template-columns:300px 1fr;gap:80px;margin-top:64px}
+.faq-s p{font-size:.9rem;color:var(--muted);line-height:1.75;margin-bottom:24px}
+.fi{border-bottom:1px solid rgba(255,255,255,.06);overflow:hidden}
+.fq{display:flex;justify-content:space-between;align-items:center;padding:24px 0;cursor:none;gap:20px}
+.fq h4{font-size:.95rem;font-weight:600;transition:color .2s}
+.fq:hover h4{color:var(--gold)}
+.ficon{width:24px;height:24px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);font-size:1rem;transition:transform .3s,border-color .2s}
+.fi.o .ficon{transform:rotate(45deg);border-color:var(--gold)}
+.fa{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.65,0,.35,1)}
+.fai{padding:0 0 22px;font-size:.88rem;color:var(--muted);line-height:1.8}
+
+/* CTA */
+#cta{background:var(--card);border-top:1px solid rgba(255,255,255,.06);padding:140px 60px;text-align:center;position:relative;overflow:hidden}
+#cta::before{content:'FUELIVERY';position:absolute;font-family:var(--font-d);font-size:22vw;color:rgba(255,255,255,.012);top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;letter-spacing:.04em}
+.cta-in{position:relative;max-width:720px;margin:0 auto}
+.ctah{font-family:var(--font-d);font-size:clamp(3rem,6.5vw,6rem);line-height:1;margin-bottom:24px}
+.ctah .g{color:var(--gold)}
+.ctap{font-size:1rem;color:var(--muted);margin-bottom:52px;line-height:1.75}
+.cta-bts{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+
+/* FOOTER */
+footer{padding:72px 60px 44px;border-top:1px solid rgba(255,255,255,.06)}
+.ft{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:52px;margin-bottom:72px}
+.fb .logo{font-family:var(--font-d);font-size:2.2rem;color:var(--gold);margin-bottom:16px}
+.fb .logo span{color:var(--white)}
+.fb p{font-size:.84rem;color:var(--muted);line-height:1.7;max-width:220px}
+.fc h5{font-family:var(--font-m);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
+.fc ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.fc ul li a{font-size:.84rem;color:var(--muted);transition:color .2s}
+.fc ul li a:hover{color:var(--white)}
+.fb-bot{display:flex;justify-content:space-between;align-items:center;padding-top:32px;border-top:1px solid rgba(255,255,255,.06)}
+.fb-bot p{font-family:var(--font-m);font-size:.63rem;letter-spacing:.08em;color:rgba(255,255,255,.2)}
+.fb-bot span{color:var(--gold)}
+
+/* MAGNETIC BUTTON WRAPPER */
+.mag-wrap{display:inline-block;position:relative}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+nav{padding:20px 28px}
+nav.s{padding:14px 28px}
+.nlinks,.ncta{display:none}
+.hbg{display:flex}
+#hero{padding:0 28px 72px}
+.hero-scroll{right:28px}
+section{padding:80px 28px}
+#cta{padding:80px 28px}
+footer{padding:52px 28px 36px}
+#stats{grid-template-columns:repeat(2,1fr)}
+.si:nth-child(2){border-right:none}
+#founder{grid-template-columns:1fr;gap:52px}
+.f-frame{aspect-ratio:4/3}
+.prob-grid{grid-template-columns:1fr;gap:52px}
+.steps{grid-template-columns:1fr}
+.model-g{grid-template-columns:1fr 1fr}
+.thesis-layout{grid-template-columns:1fr;gap:48px}
+.faq-l{grid-template-columns:1fr;gap:36px}
+.ft{grid-template-columns:1fr 1fr}
+.fb-bot{flex-direction:column;gap:10px;text-align:center}
+.vmarks{flex-direction:column}
+.vm{border-right:none;border-bottom:1px solid rgba(255,255,255,.06)}
+.vm:last-child{border-bottom:none}
+#hscroll{height:auto;padding:80px 0}
+.hs-sticky{position:relative;height:auto;overflow-x:auto;scrollbar-width:none}
+.hs-sticky::-webkit-scrollbar{display:none}
+.hs-track{transform:none!important;padding:0 28px}
+.hcard{min-width:300px;height:auto;min-height:340px}
+.hs-hint{display:none}
+.cmp{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+.hero-h1{font-size:4rem}
+#stats{grid-template-columns:1fr 1fr}
+.model-g{grid-template-columns:1fr}
+.ft{grid-template-columns:1fr}
+.hero-acts{flex-direction:column;align-items:flex-start}
+.cta-bts{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+
+<div id="prog"></div>
+<div id="cur"></div>
+<div id="cur2"></div>
+<div id="spotlight"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nlogo">FUEL<span>IVERY</span></div>
+  <ul class="nlinks">
+    <li><a href="#founder">Founder</a></li>
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#solution">Solution</a></li>
+    <li><a href="#thesis">Thesis</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <a href="#cta" class="ncta">Partner With Us</a>
+  <button class="hbg" id="hbg"><span></span><span></span><span></span></button>
+</nav>
+<div class="mmenu" id="mmenu">
+  <a href="#founder">Founder</a>
+  <a href="#problem">Problem</a>
+  <a href="#solution">Solution</a>
+  <a href="#thesis">Thesis</a>
+  <a href="#faq">FAQ</a>
+  <a href="#cta" class="gc">Partner With Us</a>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hbg-wrap">
+    <div class="hbg-grad"></div>
+    <div class="hgrid"></div>
+    <canvas id="canvas"></canvas>
+  </div>
+  <div class="hero-eye">On-Demand Fuel Delivery — Africa</div>
+  <h1 class="hero-h1">
+    <span class="ln"><span class="wd">Fuel</span></span>
+    <span class="ln"><span class="wd">Was&nbsp;</span><span class="wd g">Never</span></span>
+    <span class="ln"><span class="wd">Just&nbsp;</span><span class="wd">Fuel.</span></span>
+  </h1>
+  <p class="hero-p">Fuelivery is redesigning how Africa accesses fuel — connecting stations, logistics, businesses, and communities into one seamless convenience ecosystem.</p>
+  <div class="hero-acts">
+    <div class="mag-wrap">
+      <a href="#thesis" class="btn-p"><span>View Investment Thesis</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+    <div class="mag-wrap">
+      <a href="#founder" class="btn-g">Meet the Founder</a>
+    </div>
+  </div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- ZOOM SCROLL STRIP -->
+<div id="zoom-strip">
+  <div class="zoom-sticky">
+    <div class="zoom-text" id="zoom-text">
+      The Future Of Fuel<br><span class="zg">Will Be Delivered.</span>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="stats">
+  <div class="si rv"><div class="sn" data-c="54" data-s="+">0</div><div class="sl">African Countries Addressable</div></div>
+  <div class="si rv d1"><div class="sn" data-c="1.4" data-s="B" data-dec="1">0</div><div class="sl">People On The Continent</div></div>
+  <div class="si rv d2"><div class="sn" data-c="6" data-s=" Streams">0</div><div class="sl">Revenue Streams</div></div>
+  <div class="si rv d3"><div class="sn" data-c="0" data-s=" Stations Owned">0</div><div class="sl">Asset-Light Infrastructure</div></div>
+</div>
+
+<!-- MARQUEE -->
+<div class="mq"><div class="mqt" id="mqt">
+  <span class="mqi">On-Demand Fuel</span>
+  <span class="mqi">Convenience Infrastructure</span>
+  <span class="mqi">Africa's Future</span>
+  <span class="mqi">Fuel Delivered</span>
+  <span class="mqi">Asset-Light Logistics</span>
+  <span class="mqi">B2B Fuel Contracts</span>
+  <span class="mqi">Technology-Enabled</span>
+</div></div>
+
+<!-- FOUNDER -->
+<section id="founder">
+  <div class="rv">
+    <div class="f-frame">
+      <div class="f-inner"></div>
+      <div class="f-big">CN</div>
+      <div class="f-name"><h3>Christy Nzambi</h3><p>Founder &amp; CEO, Fuelivery</p></div>
+      <div class="fc-tl"></div><div class="fc-br"></div>
+    </div>
+  </div>
+  <div class="f-content">
+    <div class="stag rv">Founder Story</div>
+    <blockquote class="rv d1">Fuelivery did not begin as a business idea. It began as a repeated real-world problem.</blockquote>
+    <p class="rv d2">Before building Fuelivery, Christy worked at a gas station — witnessing the long queues, the urgency, the operational pressure, and the countless moments where people needed fuel immediately but had no convenient solution.</p>
+    <p class="rv d2">As an Uber driver, he understood something critical: people are no longer only paying for products. They are paying for friction to disappear. Uber didn't invent transportation — it reinvented convenience.</p>
+    <p class="rv d3">On a construction site, the pattern became impossible to ignore. Machines stood still. Operations paused. Time and money were lost — not because there was no fuel, but because there was no <em>access</em>. His engineering background taught him to identify inefficiencies and build practical solutions.</p>
+    <div class="ftags rv d3">
+      <span class="ftag">Gas Station</span>
+      <span class="ftag">Uber Driver</span>
+      <span class="ftag">Construction Ops</span>
+      <span class="ftag">Engineering</span>
+      <span class="ftag">Systems Thinker</span>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="stag rv">The Problem</div>
+  <h2 class="sh rv d1">Fuel Access Is <span style="color:var(--gold)">Broken.</span></h2>
+  <p class="sp rv d2">Fuel is essential infrastructure. Yet despite powering entire economies, access remains outdated and inefficient for millions.</p>
+  <div class="prob-grid">
+    <div class="prob-list">
+      <div class="pi rv"><span class="pin">01</span><div class="pit"><h4>Customers Still Travel to Stations</h4><p>In a world of on-demand everything, fuel forces customers to come to it.</p></div></div>
+      <div class="pi rv"><span class="pin">02</span><div class="pit"><h4>Businesses Lose Productive Time</h4><p>Construction sites and logistics operations halt because of fuel access failures — not shortages.</p></div></div>
+      <div class="pi rv"><span class="pin">03</span><div class="pit"><h4>Emergency Access Is Unreliable</h4><p>When generators fail, there is no fast, dependable delivery solution for most communities.</p></div></div>
+      <div class="pi rv"><span class="pin">04</span><div class="pit"><h4>Underserved Communities Lack Access</h4><p>Rural areas face greater barriers — stations are sparse and supply chains are weak.</p></div></div>
+      <div class="pi rv"><span class="pin">05</span><div class="pit"><h4>Generator Dependency Is Rising</h4><p>Across Africa, generator reliance is growing with no reliable infrastructure to supply fuel on-demand.</p></div></div>
+    </div>
+    <div>
+      <div class="pcard rv">
+        <div class="pcs">$500B+</div>
+        <div class="pcl">Africa's Annual Fuel Market</div>
+        <div class="pcb">One of the largest essential goods markets on the continent — still operating on a model where customers travel to the product.<br><br>Food delivery transformed restaurants. Ride-hailing transformed transport. <strong style="color:var(--white)">Fuel delivery is the next inevitable shift.</strong></div>
+      </div>
+      <div class="pcard rv d1" style="margin-top:2px">
+        <div class="pcs" style="font-size:2.8rem;line-height:1.2">The Same Problem.<br>5 Different Angles.</div>
+        <div class="pcl">Station → Driver → Construction → Customer → Infrastructure</div>
+        <div class="pcb">Every angle pointed to the same root cause: <strong style="color:var(--white)">the system was built around stations, not people.</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="solution">
+  <div class="stag rv">How It Works</div>
+  <h2 class="sh rv d1">Fuel Comes <span style="color:var(--gold)">To You.</span></h2>
+  <p class="sp rv d2">A seamless ordering experience backed by a smart logistics network and verified fuel station partners.</p>
+  <div class="steps">
+    <div class="sc rv">
+      <div class="sn2">01</div>
+      <div class="sico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div>
+      <div class="st">Place Your Order</div>
+      <div class="sd">Order through the app, website, WhatsApp, or direct support. Specify fuel type, quantity, and delivery location.</div>
+    </div>
+    <div class="sc rv d1">
+      <div class="sn2">02</div>
+      <div class="sico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+      <div class="st">Station Prepares Fuel</div>
+      <div class="sd">A verified partner fuel station receives and prepares your order. Fuelivery manages the coordination.</div>
+    </div>
+    <div class="sc rv d2">
+      <div class="sn2">03</div>
+      <div class="sico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+      <div class="st">Delivered to Your Door</div>
+      <div class="sd">A trained Fuelivery operator brings your fuel directly to your location — site, fleet, home, or anywhere.</div>
+    </div>
+  </div>
+  <div style="margin-top:2px;background:var(--card);border:1px solid rgba(255,255,255,.06);padding:36px;display:flex;gap:48px;flex-wrap:wrap;align-items:center" class="rv">
+    <div style="flex:1;min-width:200px"><div class="stag" style="margin-bottom:12px">Order Channels</div><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">📱 App</span><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">🌐 Website</span><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">💬 WhatsApp</span><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">☎️ Direct Support</span></div></div>
+    <div style="flex:1;min-width:200px"><div class="stag" style="margin-bottom:12px">Serving</div><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">🏠 Households</span><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">🏗️ Construction</span><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">🏢 Businesses</span><span style="font-family:var(--font-m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.06);color:var(--muted)">🚛 Logistics Operators</span></div></div>
+  </div>
+</section>
+
+<!-- HORIZONTAL SCROLL - REVENUE MODEL -->
+<div id="hscroll">
+  <div class="hs-sticky" id="hs-sticky">
+    <div class="hs-track" id="hs-track">
+      <div class="hcard rv">
+        <div class="hc-num">01</div>
+        <div>
+          <div class="hc-tag">Transactional</div>
+          <div class="hc-title">Delivery Service Fees</div>
+          <div class="hc-desc">Per-order fees charged on every delivery — the core transactional revenue engine of the platform. Every order, every time.</div>
+        </div>
+      </div>
+      <div class="hcard rv d1">
+        <div class="hc-num">02</div>
+        <div>
+          <div class="hc-tag">Recurring</div>
+          <div class="hc-title">Subscription Plans</div>
+          <div class="hc-desc">Monthly tiers for households and businesses that need regular, predictable fuel delivery. Stable, recurring revenue.</div>
+        </div>
+      </div>
+      <div class="hcard rv d2">
+        <div class="hc-num">03</div>
+        <div>
+          <div class="hc-tag">High-Margin</div>
+          <div class="hc-title">Emergency Premiums</div>
+          <div class="hc-desc">Premium pricing for urgent, same-hour fuel delivery to generators and critical operations when downtime is not an option.</div>
+        </div>
+      </div>
+      <div class="hcard rv d1">
+        <div class="hc-num">04</div>
+        <div>
+          <div class="hc-tag">Enterprise</div>
+          <div class="hc-title">B2B Fuel Contracts</div>
+          <div class="hc-desc">Long-term supply agreements with construction companies, logistics operators, and fleet managers.</div>
+        </div>
+      </div>
+      <div class="hcard rv d2">
+        <div class="hc-num">05</div>
+        <div>
+          <div class="hc-tag">Partnership</div>
+          <div class="hc-title">Station Commissions</div>
+          <div class="hc-desc">Revenue-share with fuel stations — Fuelivery drives their volume, they supply the fuel. Win-win ecosystem.</div>
+        </div>
+      </div>
+      <div class="hcard rv d3">
+        <div class="hc-num">06</div>
+        <div>
+          <div class="hc-tag">Scalable</div>
+          <div class="hc-title">White-Label Logistics</div>
+          <div class="hc-desc">Licensing Fuelivery's logistics infrastructure to other operators, fleet services, and regional expansion partners.</div>
+        </div>
+      </div>
+    </div>
+    <div class="hs-hint">Drag to explore revenue streams</div>
+  </div>
+</div>
+
+<!-- THESIS -->
+<section id="thesis">
+  <div class="stag rv">Investment Thesis</div>
+  <h2 class="sh rv d1">Why Fuel Delivery <span style="color:var(--gold)">Is Inevitable.</span></h2>
+  <div class="thesis-layout">
+    <div class="rv">
+      <div class="pillar a" data-i="0"><h4>Convenience</h4><p>Fuel should come to the customer — not the other way around.</p></div>
+      <div class="pillar" data-i="1"><h4>Accessibility</h4><p>Fuel access must extend beyond commercial zones into all communities.</p></div>
+      <div class="pillar" data-i="2"><h4>Scalability</h4><p>Growth through partnerships and technology — not expensive infrastructure.</p></div>
+      <div class="pillar" data-i="3"><h4>Why Africa</h4><p>Urbanisation, mobile adoption, and generator dependency create ideal conditions.</p></div>
+    </div>
+    <div class="rv d1">
+      <div class="td-panel a" id="tp0">
+        <div class="td-big">The World Moved <span class="acc">On-Demand.</span><br>Fuel Didn't.</div>
+        <p class="td-body">Consumer behaviour has fundamentally shifted. Uber redesigned transportation. Amazon redesigned shopping. Food delivery redesigned restaurants.<br><br>Fuel delivery will become standard in the same way — and Fuelivery is positioned to lead that transition in Africa.</p>
+        <div class="cmp">
+          <div class="cc bad"><div class="ccl">Old Model</div><div class="ci">Customer travels to station</div><div class="ci">Operations halt for refueling</div><div class="ci">No emergency access</div><div class="ci">Limited to commercial zones</div></div>
+          <div class="cc good"><div class="ccl">Fuelivery Model</div><div class="ci">Fuel comes to the customer</div><div class="ci">Scheduled &amp; on-demand</div><div class="ci">Emergency response capability</div><div class="ci">Reaches underserved areas</div></div>
+        </div>
+      </div>
+      <div class="td-panel" id="tp1">
+        <div class="td-big">Beyond The <span class="acc">Main Road.</span></div>
+        <p class="td-body">Fuel accessibility today is concentrated. Stations cluster around commercial corridors, leaving households, rural communities, and generator-dependent businesses without reliable access.<br><br>Fuelivery's delivery network extends reach far beyond where stations exist — making fuel accessible to anyone, anywhere.</p>
+      </div>
+      <div class="td-panel" id="tp2">
+        <div class="td-big">Asset-Light. <span class="acc">Fast-Scale.</span></div>
+        <p class="td-body">Fuelivery does not own fuel stations. No large real estate investment. Growth is achieved through fuel station partnerships, independent delivery networks, and technology automation.<br><br>Capital-efficient model that can expand rapidly across cities and regions without the overhead of traditional infrastructure companies.</p>
+      </div>
+      <div class="td-panel" id="tp3">
+        <div class="td-big">Africa Is The <span class="acc">Opportunity.</span></div>
+        <p class="td-body">Rapid urbanisation. Explosive mobile adoption. Rising generator dependency. Growing transport demand. Underserved infrastructure.<br><br>Africa presents one of the world's largest opportunities for logistics innovation — and the next generation of African logistics companies will solve these challenges through technology-enabled distribution. Fuelivery is at the center.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISION -->
+<section id="vision">
+  <div class="vis-in">
+    <div class="stag rv" style="justify-content:center">Long-Term Vision</div>
+    <h2 class="vish rv d1">The Operating<br><span class="vg">System For Fuel</span><br>Across Africa.</h2>
+    <p class="visp rv d2">We are not simply creating a delivery company. We are building the future infrastructure layer for fuel accessibility across the continent — a platform where fuel becomes easier to access, faster to receive, safer to distribute, and smarter to manage.</p>
+    <div class="vmarks rv d3">
+      <div class="vm"><span class="vdot"></span>Faster</div>
+      <div class="vm"><span class="vdot" style="animation-delay:.4s"></span>Safer</div>
+      <div class="vm"><span class="vdot" style="animation-delay:.8s"></span>Digitised</div>
+      <div class="vm"><span class="vdot" style="animation-delay:1.2s"></span>Reliable</div>
+      <div class="vm"><span class="vdot" style="animation-delay:1.6s"></span>Accessible</div>
+    </div>
+    <div class="rv d4">
+      <a href="#cta" class="btn-p" style="display:inline-flex"><span>Join The Mission</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="stag rv">FAQ</div>
+  <h2 class="sh rv d1">Common <span style="color:var(--gold)">Questions.</span></h2>
+  <div class="faq-l">
+    <div class="rv faq-s">
+      <p>Everything you need to know about Fuelivery — business model, partnerships, investment opportunities, and growth strategy.</p>
+      <a href="#cta" class="btn-p" style="display:inline-flex"><span>Get In Touch</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+    <div class="rv d1">
+      <div class="fi"><div class="fq"><h4>What is Fuelivery?</h4><div class="ficon">+</div></div><div class="fa"><div class="fai">Fuelivery is an on-demand fuel delivery platform connecting households, businesses, and communities to reliable fuel access through partnered fuel stations and a smart logistics network. We bring fuel directly to customers — safely, efficiently, and conveniently.</div></div></div>
+      <div class="fi"><div class="fq"><h4>Does Fuelivery own fuel stations?</h4><div class="ficon">+</div></div><div class="fa"><div class="fai">No. Fuelivery operates as a technology-enabled logistics platform that partners with existing fuel stations. This allows faster scaling while reducing infrastructure costs. We strengthen the existing ecosystem — we don't replace it.</div></div></div>
+      <div class="fi"><div class="fq"><h4>Is fuel delivery legal in South Africa?</h4><div class="ficon">+</div></div><div class="fa"><div class="fai">Yes. Fuelivery is committed to full compliance with South African fuel transportation, safety, and regulatory requirements — safe fuel handling, licensed operations, regulatory compliance, proper transport procedures, and partner station verification.</div></div></div>
+      <div class="fi"><div class="fq"><h4>What stage is Fuelivery currently in?</h4><div class="ficon">+</div></div><div class="fa"><div class="fai">Fuelivery is focused on building strategic partnerships, validating operational systems, expanding market positioning, and preparing for scalable rollout. Our goal is to establish a strong foundation for long-term growth across South Africa and beyond.</div></div></div>
+      <div class="fi"><div class="fq"><h4>Is Fuelivery seeking investors?</h4><div class="ficon">+</div></div><div class="fa"><div class="fai">Yes. Fuelivery actively seeks strategic investors and partners aligned with our long-term vision of modernising fuel accessibility across Africa. Investment supports technology development, operational expansion, delivery infrastructure, and market growth.</div></div></div>
+      <div class="fi"><div class="fq"><h4>What markets does Fuelivery plan to expand into?</h4><div class="ficon">+</div></div><div class="fa"><div class="fai">Initial focus is South Africa. Long-term vision includes expansion into major African markets and globally where fuel accessibility, logistics efficiency, and convenience services continue to grow rapidly.</div></div></div>
+      <div class="fi"><div class="fq"><h4>How can businesses partner with Fuelivery?</h4><div class="ficon">+</div></div><div class="fa"><div class="fai">Businesses can partner through commercial fuel supply agreements, scheduled delivery services, fleet support partnerships, white-label logistics solutions, and strategic operational partnerships. Reach out through our contact section to discuss your needs.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-in">
+    <div class="stag rv" style="justify-content:center">Partner With Us</div>
+    <h2 class="ctah rv d1">The Future Of Fuel<br><span class="g">Will Be Delivered.</span></h2>
+    <p class="ctap rv d2">We partner with investors, fuel stations, logistics operators, and strategic partners who share our belief that essential industries can be transformed through technology, logistics, and scalable execution.</p>
+    <div class="cta-bts rv d3">
+      <a href="mailto:contact@fuelivery.com" class="btn-p"><span>Schedule a Meeting</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="mailto:invest@fuelivery.com" class="btn-g">Investment Enquiries</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ft">
+    <div class="fb"><div class="logo">FUEL<span>IVERY</span></div><p>Convenience infrastructure for the next generation of Africa. The future of fuel access will not be stationary — it will be delivered.</p></div>
+    <div class="fc"><h5>Company</h5><ul><li><a href="#founder">Founder</a></li><li><a href="#problem">The Problem</a></li><li><a href="#solution">How It Works</a></li><li><a href="#vision">Our Vision</a></li></ul></div>
+    <div class="fc"><h5>Partners</h5><ul><li><a href="#cta">Fuel Stations</a></li><li><a href="#cta">Logistics Partners</a></li><li><a href="#cta">Investors</a></li><li><a href="#cta">B2B Clients</a></li></ul></div>
+    <div class="fc"><h5>Contact</h5><ul><li><a href="mailto:contact@fuelivery.com">contact@fuelivery.com</a></li><li><a href="mailto:invest@fuelivery.com">invest@fuelivery.com</a></li><li><a href="#cta">Schedule a Meeting</a></li></ul></div>
+  </div>
+  <div class="fb-bot"><p>© 2025 Fuelivery. Built for <span>Africa's Future.</span></p><p>South Africa — <span>Est. 2024</span></p></div>
+</footer>
+
+<script>
+// ── CURSOR ──
+const cur=document.getElementById('cur'),cur2=document.getElementById('cur2');
+let mx=window.innerWidth/2,my=window.innerHeight/2,rx=mx,ry=my;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function animCur(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;cur2.style.left=rx+'px';cur2.style.top=ry+'px';requestAnimationFrame(animCur)})();
+document.querySelectorAll('a,button,.pillar,.fq,.sc,.mc,.hcard,.vm,.ftag,.si').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('ch'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('ch'));
+});
+
+// ── SPOTLIGHT ──
+const sl=document.getElementById('spotlight');
+document.addEventListener('mousemove',e=>{sl.style.background=`radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(232,160,32,.07) 0%, transparent 70%)`});
+
+// ── PARTICLES ──
+const cvs=document.getElementById('canvas');
+const ctx=cvs.getContext('2d');
+let W,H,pts=[];
+function resizeCvs(){W=cvs.width=window.innerWidth;H=cvs.height=window.innerHeight;pts=Array.from({length:80},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.5,a:Math.random()}))}
+resizeCvs();window.addEventListener('resize',resizeCvs);
+function animPts(){
+  ctx.clearRect(0,0,W,H);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>W)p.vx*=-1;
+    if(p.y<0||p.y>H)p.vy*=-1;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(232,160,32,${p.a*.3})`;ctx.fill();
+  });
+  pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d<120){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(232,160,32,${(1-d/120)*.06})`;ctx.stroke()}
+  }));
+  requestAnimationFrame(animPts);
+}
+animPts();
+
+// ── LOAD ANIMATION ──
+setTimeout(()=>document.body.classList.add('ld'),120);
+
+// ── PROGRESS ──
+const prog=document.getElementById('prog');
+window.addEventListener('scroll',()=>{const pct=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100;prog.style.width=pct+'%'});
+
+// ── NAV SCROLL ──
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>nav.classList.toggle('s',window.scrollY>60));
+
+// ── HAMBURGER ──
+const hbg=document.getElementById('hbg'),mm=document.getElementById('mmenu');
+hbg.addEventListener('click',()=>{hbg.classList.toggle('o');mm.classList.toggle('o');document.body.style.overflow=mm.classList.contains('o')?'hidden':''});
+mm.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{hbg.classList.remove('o');mm.classList.remove('o');document.body.style.overflow=''}));
+
+// ── REVEAL OBSERVER ──
+const ro=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('iv');ro.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.rv,.si').forEach(el=>ro.observe(el));
+
+// ── COUNTER ──
+function counter(el,t,suf,dec){
+  const dur=1800,start=performance.now();
+  (function upd(now){
+    const p=Math.min((now-start)/dur,1);
+    const e=1-Math.pow(1-p,3);
+    const v=dec?((e*t).toFixed(dec)):(Math.floor(e*t));
+    el.textContent=v+suf;
+    if(p<1)requestAnimationFrame(upd);
+  })(start);
+}
+const co=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){
+    const el=e.target,c=parseFloat(el.dataset.c),s=el.dataset.s||'',d=parseInt(el.dataset.dec)||0;
+    counter(el,c,s,d);co.unobserve(el);
+  }
+}),{threshold:.5});
+document.querySelectorAll('.sn[data-c]').forEach(el=>co.observe(el));
+
+// ── ZOOM SCROLL ──
+const zstrip=document.getElementById('zoom-strip'),zt=document.getElementById('zoom-text');
+window.addEventListener('scroll',()=>{
+  const r=zstrip.getBoundingClientRect(),h=window.innerHeight;
+  const total=zstrip.offsetHeight-h;
+  if(r.top<=0&&r.bottom>=h){
+    const p=Math.min(Math.max(-r.top/total,0),1);
+    const sc=0.6+p*0.52;
+    const op=p<.1?p*10:p>.9?(1-p)*10:1;
+    zt.style.transform=`scale(${sc})`;
+    zt.style.opacity=op;
+  }
+});
+
+// ── HORIZONTAL SCROLL ──
+const hss=document.getElementById('hs-sticky'),hst=document.getElementById('hs-track'),hsc=document.getElementById('hscroll');
+const isMob=()=>window.innerWidth<=1024;
+window.addEventListener('scroll',()=>{
+  if(isMob())return;
+  const r=hsc.getBoundingClientRect();
+  const maxScroll=hsc.offsetHeight-window.innerHeight;
+  if(r.top<=0&&r.bottom>=window.innerHeight){
+    const p=Math.min(Math.max(-r.top/maxScroll,0),1);
+    const maxX=hst.scrollWidth-window.innerWidth;
+    hst.style.transform=`translateX(${-p*maxX}px)`;
+  }
+});
+
+// ── MARQUEE DUPE ──
+const mqt=document.getElementById('mqt');mqt.innerHTML+=mqt.innerHTML;
+
+// ── FAQ ──
+document.querySelectorAll('.fq').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const fi=q.closest('.fi'),fa=fi.querySelector('.fa'),open=fi.classList.contains('o');
+    document.querySelectorAll('.fi.o').forEach(x=>{x.classList.remove('o');x.querySelector('.fa').style.maxHeight='0'});
+    if(!open){fi.classList.add('o');fa.style.maxHeight=fa.scrollHeight+'px'}
+  });
+});
+
+// ── THESIS TABS ──
+document.querySelectorAll('.pillar').forEach((p,i)=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('.pillar').forEach(x=>x.classList.remove('a'));
+    document.querySelectorAll('.td-panel').forEach(x=>x.classList.remove('a'));
+    p.classList.add('a');
+    const panel=document.getElementById('tp'+i);
+    if(panel)panel.classList.add('a');
+  });
+});
+
+// ── MAGNETIC BUTTONS ──
+document.querySelectorAll('.mag-wrap').forEach(wrap=>{
+  const btn=wrap.querySelector('a');
+  wrap.addEventListener('mousemove',e=>{
+    const r=wrap.getBoundingClientRect();
+    const dx=(e.clientX-r.left-r.width/2)*.35;
+    const dy=(e.clientY-r.top-r.height/2)*.35;
+    btn.style.transform=`translate(${dx}px,${dy}px)`;
+  });
+  wrap.addEventListener('mouseleave',()=>{btn.style.transform='translate(0,0)'});
+});
+
+// ── SMOOTH SCROLL ──
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}
+  });
+});
+</script>
+</body>
+</html>
